@@ -1,0 +1,58 @@
+version: "3"
+
+volumes:
+  postgres-data:
+  gitea-data:
+
+services:
+
+  gitea:
+    image: gitea/gitea:1.15.6
+    restart: always
+    volumes:
+      - gitea-data:/data
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      - USER_UID=1000
+      - USER_GID=1000
+      - GITEA__database__DB_TYPE=postgres
+      - GITEA__database__HOST=db:5432
+      - GITEA__database__NAME=${DB_NAME}
+      - GITEA__database__USER=${DB_USER}
+      - GITEA__database__PASSWD=${DB_PASS}
+    ports:
+      - 22:22
+    expose:
+      - 3000
+    depends_on:
+      - db
+
+  db:
+    image: postgres:13
+    restart: always
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASS}
+    expose:
+      - 5432
+
+  proxy:
+    image: nginx:1.21.4-alpine
+    restart: always
+    volumes:
+      - ./proxy/templates:/etc/nginx/templates
+      - ${PATH_SSL_DIR}:${PATH_SSL_DIR}:ro
+    environment:
+      - FQDN=${FQDN}
+      - PATH_SSL_CERT=${PATH_SSL_CERT}
+      - PATH_SSL_KEY=${PATH_SSL_KEY}
+    ports:
+      - 80:80
+      - 443:443
+    depends_on:
+      - gitea
+

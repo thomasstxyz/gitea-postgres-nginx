@@ -1,0 +1,17 @@
+server {
+    listen       80;
+    server_name  ${FQDN};
+
+    return 302 https://$server_name$request_uri;
+}
+server {
+    listen       443;
+    server_name  ${FQDN};
+    ssl on;
+    ssl_certificate ${PATH_SSL_CERT};
+    ssl_certificate_key ${PATH_SSL_KEY};
+
+    location / {
+        proxy_pass   http://gitea:3000;
+    }
+}
